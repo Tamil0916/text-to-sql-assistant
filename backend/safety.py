@@ -12,6 +12,10 @@ class UnsafeSQL(Exception):
     pass
 
 
+class MalformedSQL(UnsafeSQL):
+    """SQL that could not be parsed. Not dangerous, so the agent may ask the model to fix it."""
+
+
 BLOCKED = {"Insert", "Update", "Delete", "Drop", "Create", "Alter", "AlterTable", "Command", "Pragma",
            "Attach", "Detach", "Merge", "Copy", "TruncateTable", "Transaction", "Commit", "Rollback"}
 
@@ -23,7 +27,7 @@ def validate(sql):
     try:
         statements = [s for s in sqlglot.parse(sql, read="sqlite") if s is not None]
     except (ParseError, TokenError) as e:
-        raise UnsafeSQL(f"Could not parse the SQL: {e}")
+        raise MalformedSQL(f"Could not parse the SQL: {e}")
     if len(statements) != 1:
         raise UnsafeSQL("Only one statement is allowed")
     tree = statements[0]

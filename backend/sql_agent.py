@@ -7,6 +7,7 @@ from groq import Groq
 
 from safety import UnsafeSQL, run_query
 from schema import AS_OF, DB_PATH, get_schema
+from safety import MalformedSQL, UnsafeSQL, run_query
 
 load_dotenv()
 MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
@@ -71,6 +72,10 @@ def _execute(sql):
         return {"sql": sql, "df": None, "truncated": False, "error": f"Blocked for safety: {e}", "fatal": True}
     except sqlite3.Error as e:
         return {"sql": sql, "df": None, "truncated": False, "error": str(e), "fatal": False}
+    except MalformedSQL as e:
+        return {"sql": sql, "df": None, "truncated": False, "error": str(e)[:300], "fatal": False}
+    except UnsafeSQL as e:
+
 
 
 def ask(question):

@@ -6,7 +6,7 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
 
-from safety import UnsafeSQL, run_query, validate
+from safety import MalformedSQL, UnsafeSQL, run_query, validate
 
 
 @pytest.mark.parametrize("sql", [
@@ -42,3 +42,22 @@ def test_row_limit_truncates_results(tmp_path):
     con.close()
     df, truncated, _ = run_query("SELECT * FROM t", str(db), max_rows=5)
     assert len(df) == 5 and truncated
+
+BAD_SQL = """SELECT i.customer_id
+FROM (
+    SELECT o.customer_id, SUM(i.amount) AS total_overdue
+    FROM invoices i
+    JOIN orders o ON i.order_id = o.order_id
+    WHERE i.paid_date IS NULL
+      AND i.due_date < '2026-11-01'
+    GROUP BY o.customer_id
+    ORDER BY total_overdue DESC
+    LIMIT 5
+) AS sub
+JOIN customers c ON c.customer_id = sub.customer_id
+SELECT sub.customer_id FROM sub;"""
+
+
+def test_malformed_sql_is_reported_as_malformed():
+    with pytest.raises(MalformedSQL):
+        validate(BAD_SQL)
