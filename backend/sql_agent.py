@@ -68,13 +68,12 @@ def _execute(sql):
     try:
         df, truncated, clean = run_query(sql, DB_PATH)
         return {"sql": clean, "df": df, "truncated": truncated, "error": None}
+    except MalformedSQL as e:
+        return {"sql": sql, "df": None, "truncated": False, "error": str(e)[:300], "fatal": False}
     except UnsafeSQL as e:
         return {"sql": sql, "df": None, "truncated": False, "error": f"Blocked for safety: {e}", "fatal": True}
     except sqlite3.Error as e:
         return {"sql": sql, "df": None, "truncated": False, "error": str(e), "fatal": False}
-    except MalformedSQL as e:
-        return {"sql": sql, "df": None, "truncated": False, "error": str(e)[:300], "fatal": False}
-    except UnsafeSQL as e:
 
 
 
