@@ -19,7 +19,10 @@ Rules:
 - Never modify data (no INSERT, UPDATE, DELETE, DROP, CREATE, ALTER).
 - Dates are ISO text (YYYY-MM-DD). Treat today's date as {as_of}. Do not use date('now').
 - An invoice is overdue when paid_date IS NULL and due_date < today.
-- Cancelled orders have no invoice. "Revenue" means the sum of invoices.amount.
+- Cancelled orders have no invoice.
+- invoices.amount is the total for a WHOLE order. Never SUM(invoices.amount) in a query that also joins order_items or products, because the amount repeats for every item.
+- Revenue by customer, country or month: SUM(invoices.amount), without joining order_items.
+- Revenue by product or category: SUM(order_items.quantity * products.unit_price), joined through orders with orders.status != 'Cancelled'.
 - If the question cannot be answered from the schema, output exactly: CANNOT_ANSWER
 
 Schema:
